@@ -84,7 +84,16 @@
 
             $dsn     = Settings::get('sentry_dsn'  , null);
             $level   = Settings::get('sentry_level', 100);
-            $handler = new RavenHandler(new Raven_Client($dsn), $level);
+            $client  = new Raven_Client($dsn);
+
+            $client->setSendCallback(function (&$data) {
+                $user = app('user.auth')->getUser();
+                if ($user) {
+                    $data['user'] = ['id' => $user->id];
+                }
+            });
+
+            $handler = new RavenHandler($client, $level);
 
             $monolog->pushHandler($handler);
 
